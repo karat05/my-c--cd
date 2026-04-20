@@ -1,0 +1,37 @@
+name: C++ Docker CI
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout кода
+        uses: actions/checkout@v4
+
+      - name: 🐳 Сборка образа
+        run: docker build -t my-cpp-app:latest .
+
+      - name: 🚀 Запуск контейнера
+        run: docker run --name cpp-test my-cpp-app:latest
+
+      - name: ✅ Проверка вывода
+        run: |
+          OUTPUT=$(docker logs cpp-test 2>&1)
+          docker rm cpp-test
+          
+          if echo "$OUTPUT" | grep -q "Hello from C++"; then
+            echo "✅ CI Test: Приложение работает корректно!"
+          else
+            echo "❌ CI Test: Ожидаемый вывод не найден."
+            echo "$OUTPUT"
+            exit 1
+          fi
+
+      - name: 📜 Логи при ошибке
+        if: failure()
+        run: docker logs cpp-test || true
